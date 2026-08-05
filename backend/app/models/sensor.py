@@ -7,14 +7,33 @@ class Sensor(Base):
 
     __tablename__ = "sensors"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
 
-    sensor_name = Column(String(100), nullable=False)
+    sensor_name = Column(
+        String(100),
+        nullable=False
+    )
 
-    sensor_type = Column(String(50))
+    sensor_type = Column(
+        String(50),
+        nullable=True
+    )
 
-    location = Column(String(150))
+    location = Column(
+        String(150),
+        nullable=True
+    )
 
-    current_sensitivity = Column(String(20))
+    current_sensitivity = Column(
+        String(20),
+        nullable=True
+    )
 
-    status = Column(String(20))
+    status = Column(
+        String(20),
+        default="active"
+    )

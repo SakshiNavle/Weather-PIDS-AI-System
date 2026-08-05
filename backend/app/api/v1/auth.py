@@ -1,14 +1,29 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status
+)
+from app.core.jwt import create_access_token
+from app.security.password import verify_password, hash_password
+from app.models.user import User
+from fastapi.security import OAuth2PasswordRequestForm
+from app.security.password import verify_password
 from sqlalchemy.orm import Session
 
+
 from app.core.database import get_db
+
+from app.models.user import User   # <-- ADD THIS
+
 from app.schemas.user_schema import (
-    UserLogin,
     UserRegister,
-    UserResponse,
     Token,
+    UserResponse
 )
+
 from app.services.auth_service import AuthService
+from app.security.password import verify_password
 
 router = APIRouter(
     prefix="/auth",
@@ -35,15 +50,45 @@ def register(
 
 @router.post(
     "/login",
-    response_model=Token,
+    response_model=Token
 )
-def login(
-    credentials: UserLogin,
-    db: Session = Depends(get_db),
+def login_user(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
 ):
-    """
-    Authenticate a user and return a JWT token.
-    """
-    service = AuthService(db)
 
-    return service.login(credentials)
+    user = db.query(User).filter(
+        User.username == form_data.username
+    ).first()
+
+
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password"
+        )
+
+
+    if not verify_password(
+        form_data.password,
+        user.password_hash
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password"
+        )
+
+
+    access_token = create_access_token(
+        data={
+            "sub": user.username,
+            "user_id": user.id,
+            "role": user.role
+        }
+    )
+
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }

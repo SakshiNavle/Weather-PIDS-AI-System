@@ -41,11 +41,15 @@ class WeatherCreate(WeatherBase):
 
 
 class WeatherResponse(WeatherBase):
-    """
-    Schema returned to API clients.
-    """
 
     id: int
+
+    site_name: str
+
+    storm: bool
+
+    weather_risk: str
+
     timestamp: datetime
 
     model_config = ConfigDict(

@@ -15,7 +15,7 @@ from app.models.alert import Alert
 from app.api.v1.auth import router as auth_router
 from app.api.v1.weather import router as weather_router
 from app.api.v1.users import router as user_router
-
+from app.api.v1.sensors import router as sensor_router
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -41,9 +41,15 @@ app.include_router(
 )
 
 app.include_router(
+    sensor_router,
+    prefix="/api/v1"
+)
+
+app.include_router(
     user_router,
     prefix="/api/v1"
 )
+
 
 
 @app.get("/")
