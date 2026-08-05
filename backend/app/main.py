@@ -2,7 +2,7 @@ from fastapi import FastAPI
 
 from app.core.database import Base, engine
 
-# Import all models BEFORE create_all
+# Import models (required before create_all)
 from app.models.user import User
 from app.models.sensor import Sensor
 from app.models.weather import WeatherData
@@ -10,17 +10,46 @@ from app.models.recommendation import Recommendation
 from app.models.calibration import CalibrationHistory
 from app.models.alert import Alert
 
-from app.auth.auth_router import router as auth_router
 
+# Import API routers
+from app.api.v1.auth import router as auth_router
+from app.api.v1.weather import router as weather_router
+from app.api.v1.users import router as user_router
+
+
+# Create database tables
 Base.metadata.create_all(bind=engine)
+
 
 app = FastAPI(
     title="Weather PIDS AI System",
-    version="1.0.0"
+    version="1.0.0",
+    description="AI Based Weather Predictive Intelligence & Decision Support System"
 )
 
-app.include_router(auth_router)
+
+# API Version 1 routes
+
+app.include_router(
+    auth_router,
+    prefix="/api/v1"
+)
+
+app.include_router(
+    weather_router,
+    prefix="/api/v1"
+)
+
+app.include_router(
+    user_router,
+    prefix="/api/v1"
+)
+
 
 @app.get("/")
 def root():
-    return {"message": "Weather PIDS AI System API Running 🚀"}
+
+    return {
+        "message": "Weather PIDS AI System API Running 🚀",
+        "version": "1.0.0"
+    }
