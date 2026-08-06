@@ -10,14 +10,19 @@ from app.models.recommendation import Recommendation
 from app.models.calibration import CalibrationHistory
 from app.models.alert import Alert
 
-
+from app.models.alert import Alert
 # Import API routers
 from app.api.v1.auth import router as auth_router
 from app.api.v1.weather import router as weather_router
 from app.api.v1.users import router as user_router
 from app.api.v1.sensors import router as sensor_router
-
+from app.api.v1.alerts import router as alert_router
+from app.models.recommendation import Recommendation
+from app.api.v1.recommendations import router as recommendation_router
 # Create database tables
+from app.api.v1.dashboard import router as dashboard_router
+from app.models.prediction import Prediction
+from app.api.v1.predictions import router as prediction_router
 Base.metadata.create_all(bind=engine)
 
 
@@ -49,7 +54,20 @@ app.include_router(
     user_router,
     prefix="/api/v1"
 )
+app.include_router(alert_router, prefix="/api/v1")
+app.include_router(
+    recommendation_router,
+    prefix="/api/v1"
+)
+app.include_router(
+    dashboard_router,
+    prefix="/api/v1"
+)
 
+app.include_router(
+    prediction_router,
+    prefix="/api/v1",
+)
 
 
 @app.get("/")
