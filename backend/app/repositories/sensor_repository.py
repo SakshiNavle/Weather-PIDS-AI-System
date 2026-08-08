@@ -1,66 +1,42 @@
-from typing import Optional, List
-
 from sqlalchemy.orm import Session
 
 from app.models.sensor import Sensor
 
 
 class SensorRepository:
-    """
-    Handles only database operations
-    """
-
 
     def __init__(self, db: Session):
         self.db = db
 
-
-    def get_all(self) -> List[Sensor]:
-
-        return self.db.query(Sensor).all()
-
-
-    def get_by_id(
-        self,
-        sensor_id: int
-    ) -> Optional[Sensor]:
-
-        return (
-            self.db.query(Sensor)
-            .filter(
-                Sensor.id == sensor_id
-            )
-            .first()
-        )
-
-
-    def create(
-        self,
-        sensor: Sensor
-    ) -> Sensor:
-
+    def create(self, sensor: Sensor):
         self.db.add(sensor)
         self.db.commit()
         self.db.refresh(sensor)
 
+        print("DEBUG SENSOR:", sensor)
+        print("DEBUG SENSOR ID:", sensor.id)
+
         return sensor
 
+    def get_all(self):
+        return (
+            self.db.query(Sensor)
+            .order_by(Sensor.id.asc())
+            .all()
+        )
 
-    def update(
-        self,
-        sensor: Sensor
-    ) -> Sensor:
+    def get_by_id(self, sensor_id: int):
+        return (
+            self.db.query(Sensor)
+            .filter(Sensor.id == sensor_id)
+            .first()
+        )
 
+    def update(self, sensor: Sensor):
         self.db.commit()
         self.db.refresh(sensor)
-
         return sensor
 
-
-    def delete(
-        self,
-        sensor: Sensor
-    ):
-
+    def delete(self, sensor: Sensor):
         self.db.delete(sensor)
         self.db.commit()

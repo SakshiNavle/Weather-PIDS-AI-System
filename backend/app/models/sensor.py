@@ -4,7 +4,6 @@ from app.core.database import Base
 
 
 class Sensor(Base):
-
     __tablename__ = "sensors"
 
     id = Column(

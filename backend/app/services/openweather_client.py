@@ -22,7 +22,13 @@ class OpenWeatherClient:
     - Access the database
     """
 
-    BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
+    CURRENT_WEATHER_URL = (
+        "https://api.openweathermap.org/data/2.5/weather"
+    )
+
+    FORECAST_URL = (
+        "https://api.openweathermap.org/data/2.5/forecast"
+    )
 
     def __init__(self):
         self.api_key = settings.OPENWEATHER_API_KEY
@@ -30,6 +36,10 @@ class OpenWeatherClient:
         self.client = httpx.Client(
             timeout=10.0
         )
+
+    # ============================================================
+    # CURRENT WEATHER
+    # ============================================================
 
     def get_current_weather(
         self,
@@ -40,7 +50,7 @@ class OpenWeatherClient:
         """
 
         response = self.client.get(
-            self.BASE_URL,
+            self.CURRENT_WEATHER_URL,
             params={
                 "q": city,
                 "appid": self.api_key,
@@ -52,8 +62,41 @@ class OpenWeatherClient:
 
         return response.json()
 
+    # ============================================================
+    # WEATHER FORECAST
+    # ============================================================
+
+    def get_weather_forecast(
+        self,
+        city: str,
+    ) -> dict[str, Any]:
+        """
+        Fetch short-term weather forecast for a city.
+
+        OpenWeather provides forecast data at approximately
+        3-hour intervals.
+        """
+
+        response = self.client.get(
+            self.FORECAST_URL,
+            params={
+                "q": city,
+                "appid": self.api_key,
+                "units": "metric",
+            },
+        )
+
+        response.raise_for_status()
+
+        return response.json()
+
+    # ============================================================
+    # CLOSE CLIENT
+    # ============================================================
+
     def close(self):
         """
         Close underlying HTTP client.
         """
+
         self.client.close()

@@ -13,21 +13,16 @@ class WeatherRepository:
     def __init__(self, db: Session):
         self.db = db
 
-
     def save(
         self,
-        weather: WeatherData
+        weather: WeatherData,
     ) -> WeatherData:
-
         self.db.add(weather)
-
         return weather
 
-
     def find_latest(
-        self
+        self,
     ) -> Optional[WeatherData]:
-
         return (
             self.db.query(WeatherData)
             .order_by(
@@ -36,33 +31,26 @@ class WeatherRepository:
             .first()
         )
 
-
-    def find_history(
-        self,
-        limit: int = 100
-    ) -> list[WeatherData]:
-
+    def find_history(self, limit: int = 100):
         return (
             self.db.query(WeatherData)
             .order_by(
-                WeatherData.timestamp.desc()
+                WeatherData.recorded_at.desc()
             )
             .limit(limit)
             .all()
         )
 
-
     def find_between_dates(
         self,
         start_date,
-        end_date
+        end_date,
     ) -> list[WeatherData]:
-
         return (
             self.db.query(WeatherData)
             .filter(
                 WeatherData.timestamp >= start_date,
-                WeatherData.timestamp <= end_date
+                WeatherData.timestamp <= end_date,
             )
             .order_by(
                 WeatherData.timestamp.asc()

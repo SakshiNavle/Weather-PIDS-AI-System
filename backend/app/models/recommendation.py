@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.sql import func
 
 from app.core.database import Base
@@ -7,15 +7,38 @@ from app.core.database import Base
 class Recommendation(Base):
     __tablename__ = "recommendations"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
 
-    risk_level = Column(String(20), nullable=False)
+    sensor_id = Column(
+        Integer,
+        ForeignKey("sensors.id"),
+        nullable=False,
+        index=True
+    )
 
-    title = Column(String(150), nullable=False)
+    risk_level = Column(
+        String(20),
+        nullable=False
+    )
 
-    description = Column(String(500), nullable=False)
+    title = Column(
+        String(150),
+        nullable=False
+    )
 
-    action = Column(String(500), nullable=False)
+    description = Column(
+        String(500),
+        nullable=False
+    )
+
+    action = Column(
+        String(500),
+        nullable=False
+    )
 
     created_at = Column(
         DateTime(timezone=True),

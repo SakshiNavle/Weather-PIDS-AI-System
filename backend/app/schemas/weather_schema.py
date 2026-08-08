@@ -1,12 +1,9 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, AliasChoices
 
 
 class WeatherBase(BaseModel):
-    """
-    Base schema for weather information.
-    """
 
     temperature: float = Field(
         ...,
@@ -29,14 +26,19 @@ class WeatherBase(BaseModel):
     rainfall: float = Field(
         default=0.0,
         ge=0,
-        description="Rainfall in millimeters"
+        description="Rainfall in millimeters during the last hour"
+    )
+
+    weather_condition: str = Field(
+        default="Clear"
+    )
+
+    weather_description: str = Field(
+        default=""
     )
 
 
 class WeatherCreate(WeatherBase):
-    """
-    Schema used when creating weather records.
-    """
     pass
 
 
@@ -50,7 +52,12 @@ class WeatherResponse(WeatherBase):
 
     weather_risk: str
 
-    timestamp: datetime
+    timestamp: datetime = Field(
+        validation_alias=AliasChoices(
+            "timestamp",
+            "recorded_at"
+        )
+    )
 
     model_config = ConfigDict(
         from_attributes=True
@@ -58,9 +65,6 @@ class WeatherResponse(WeatherBase):
 
 
 class WeatherCurrentResponse(BaseModel):
-    """
-    Current weather response from the Weather API.
-    """
 
     location: str
 
@@ -68,17 +72,11 @@ class WeatherCurrentResponse(BaseModel):
 
 
 class WeatherHistoryResponse(BaseModel):
-    """
-    Historical weather records.
-    """
 
     records: list[WeatherResponse]
 
 
 class WeatherRefreshResponse(BaseModel):
-    """
-    Response after refreshing weather data.
-    """
 
     success: bool
 

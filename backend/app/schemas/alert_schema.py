@@ -1,17 +1,30 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+)
 
 
 class AlertBase(BaseModel):
-    site_name: str = Field(..., max_length=100)
+
+    sensor_id: int | None = None
+
+    site_name: str = Field(
+        ...,
+        max_length=100
+    )
 
     risk_level: str = Field(
         ...,
         description="LOW | MEDIUM | HIGH | SEVERE"
     )
 
-    message: str = Field(..., max_length=255)
+    message: str = Field(
+        ...,
+        max_length=255
+    )
 
     is_active: bool = True
 
@@ -21,6 +34,7 @@ class AlertCreate(AlertBase):
 
 
 class AlertUpdate(BaseModel):
+
     risk_level: str | None = None
 
     message: str | None = None
@@ -29,9 +43,12 @@ class AlertUpdate(BaseModel):
 
 
 class AlertResponse(AlertBase):
+
     id: int
 
     created_at: datetime
+
+    resolved_at: datetime | None = None
 
     model_config = ConfigDict(
         from_attributes=True

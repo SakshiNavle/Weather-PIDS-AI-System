@@ -13,8 +13,12 @@ class SensorCreate(SensorBase):
     pass
 
 
-class SensorUpdate(SensorBase):
-    pass
+class SensorUpdate(BaseModel):
+    sensor_name: str | None = None
+    sensor_type: str | None = None
+    location: str | None = None
+    current_sensitivity: str | None = None
+    status: str | None = None
 
 
 class SensorResponse(SensorBase):
