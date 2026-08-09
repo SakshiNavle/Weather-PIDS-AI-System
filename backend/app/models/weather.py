@@ -16,7 +16,7 @@ class WeatherData(Base):
     )
 
     site_name = Column(
-        String(100),
+        String,
         nullable=False
     )
 
@@ -37,31 +37,27 @@ class WeatherData(Base):
 
     rainfall = Column(
         Float,
-        default=0.0,
-        nullable=False
+        nullable=False,
+        default=0.0
     )
 
     weather_condition = Column(
-        String(50),
-        default="Clear",
-        nullable=False
+        String,
+        nullable=True
     )
 
     weather_description = Column(
-        String(150),
-        default="",
-        nullable=False
+        String,
+        nullable=True
     )
 
     storm = Column(
         Boolean,
-        default=False,
-        nullable=False
+        default=False
     )
 
     weather_risk = Column(
-        String(20),
-        default="LOW",
+        String,
         nullable=False
     )
 

@@ -1,7 +1,6 @@
-
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from app.tasks import weather_prediction_job
+from app.tasks import update_weather
 
 
 scheduler = BackgroundScheduler()
@@ -9,19 +8,27 @@ scheduler = BackgroundScheduler()
 
 def start_scheduler():
 
+    # Avoid duplicate jobs if scheduler is initialized again
+    if scheduler.get_job("weather_update_job"):
+        return
+
     scheduler.add_job(
-        weather_prediction_job,
-
+        update_weather,
         trigger="interval",
-
         minutes=5,
-
-        id="weather_prediction_job",
-
+        id="weather_update_job",
         replace_existing=True,
+        max_instances=1,
+        coalesce=True,
     )
 
     scheduler.start()
 
     print("Scheduler Started")
 
+
+def stop_scheduler():
+
+    if scheduler.running:
+        scheduler.shutdown(wait=False)
+        print("Scheduler Stopped")

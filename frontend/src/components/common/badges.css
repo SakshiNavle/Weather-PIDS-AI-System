@@ -1,0 +1,58 @@
+.risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.risk-badge--sm { font-size: 10px; padding: 2px 6px; }
+
+.risk-badge--low { color: var(--risk-low); background: var(--risk-low-dim); border-color: rgba(52,211,153,0.28); }
+.risk-badge--medium { color: var(--risk-medium); background: var(--risk-medium-dim); border-color: rgba(251,191,36,0.28); }
+.risk-badge--high { color: var(--risk-high); background: var(--risk-high-dim); border-color: rgba(251,122,60,0.3); }
+.risk-badge--severe { color: var(--risk-severe); background: var(--risk-severe-dim); border-color: rgba(240,72,62,0.32); }
+.risk-badge--unknown { color: var(--text-tertiary); background: var(--surface-2); border-color: var(--border); }
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+}
+.status-badge__dot { width: 6px; height: 6px; border-radius: 50%; }
+
+.status-badge--active { color: var(--risk-low); background: var(--risk-low-dim); }
+.status-badge--active .status-badge__dot { background: var(--risk-low); box-shadow: 0 0 6px var(--risk-low); }
+
+.status-badge--inactive { color: var(--text-tertiary); background: var(--surface-2); }
+.status-badge--inactive .status-badge__dot { background: var(--text-tertiary); }
+
+.status-badge--resolved { color: var(--accent); background: var(--accent-dim); }
+.status-badge--resolved .status-badge__dot { background: var(--accent); }
+
+.sens-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  letter-spacing: 0.04em;
+}
+.sens-badge--low { color: var(--risk-low); border-color: rgba(52,211,153,0.3); }
+.sens-badge--medium { color: var(--risk-medium); border-color: rgba(251,191,36,0.3); }
+.sens-badge--high { color: var(--risk-high); border-color: rgba(251,122,60,0.32); }
+.sens-badge--unknown { color: var(--text-tertiary); }

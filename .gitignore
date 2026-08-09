@@ -234,3 +234,6 @@ __pycache__/
 
 # IDE
 .vscode/
+weather_pids.db
+
+weather_pids.db
