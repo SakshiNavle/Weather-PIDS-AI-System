@@ -13,17 +13,31 @@ export default function Weather() {
     refetch,
   } = useWeatherHistory(72);
 
-  const weatherHistory = Array.isArray(history) ? history : [];
+  const weatherHistory = Array.isArray(history)
+    ? history
+    : [];
+
+  const getTimestamp = (w: {
+    timestamp?: string | null;
+    recorded_at?: string | null;
+  }) => {
+    return (
+      w.timestamp ||
+      w.recorded_at ||
+      new Date().toISOString()
+    );
+  };
 
   const chartData = weatherHistory
     .slice()
     .reverse()
     .map((w) => {
-      const timestamp =
-        w.timestamp || new Date().toISOString();
+      const timestamp = getTimestamp(w);
 
       return {
-        label: new Date(timestamp).toLocaleTimeString(undefined, {
+        label: new Date(
+          timestamp
+        ).toLocaleTimeString(undefined, {
           hour: "numeric",
           minute: "2-digit",
         }),
@@ -42,11 +56,12 @@ export default function Weather() {
 
   return (
     <div className="page">
-      <div className="page-header">
+      <div className="page__header">
         <div>
           <h1>Weather</h1>
           <p>
-            Live environmental readings feeding the calibration model
+            Live environmental readings feeding the
+            calibration model
           </p>
         </div>
       </div>
@@ -80,7 +95,8 @@ export default function Weather() {
             >
               Loading weather history...
             </div>
-          ) : error && weatherHistory.length === 0 ? (
+          ) : error &&
+            weatherHistory.length === 0 ? (
             <ErrorState
               title="Unable to load weather history."
               description={error}
@@ -119,15 +135,24 @@ export default function Weather() {
                         </td>
 
                         <td className="cell-mono">
-                          {Number(w.temperature).toFixed(1)}°C
+                          {Number(
+                            w.temperature
+                          ).toFixed(1)}
+                          °C
                         </td>
 
                         <td className="cell-mono">
-                          {Number(w.humidity).toFixed(0)}%
+                          {Number(
+                            w.humidity
+                          ).toFixed(0)}
+                          %
                         </td>
 
                         <td className="cell-mono">
-                          {Number(w.wind_speed).toFixed(1)} m/s
+                          {Number(
+                            w.wind_speed
+                          ).toFixed(1)}{" "}
+                          m/s
                         </td>
 
                         <td>
@@ -138,7 +163,9 @@ export default function Weather() {
                         </td>
 
                         <td className="cell-mono">
-                          {formatDateTime(w.timestamp)}
+                          {formatDateTime(
+                            getTimestamp(w)
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -167,7 +194,9 @@ export default function Weather() {
           loading={loading}
           error={error}
           onRetry={refetch}
-          valueFormatter={(v) => `${v.toFixed(1)}°C`}
+          valueFormatter={(v) =>
+            `${v.toFixed(1)}°C`
+          }
         />
 
         <ChartCard
@@ -179,7 +208,9 @@ export default function Weather() {
           loading={loading}
           error={error}
           onRetry={refetch}
-          valueFormatter={(v) => `${Math.round(v)}%`}
+          valueFormatter={(v) =>
+            `${Math.round(v)}%`
+          }
         />
       </div>
 
@@ -196,7 +227,9 @@ export default function Weather() {
           loading={loading}
           error={error}
           onRetry={refetch}
-          valueFormatter={(v) => `${v.toFixed(1)} m/s`}
+          valueFormatter={(v) =>
+            `${v.toFixed(1)} m/s`
+          }
         />
 
         <ChartCard
@@ -208,7 +241,9 @@ export default function Weather() {
           loading={loading}
           error={error}
           onRetry={refetch}
-          valueFormatter={(v) => `${v.toFixed(2)} mm`}
+          valueFormatter={(v) =>
+            `${v.toFixed(2)} mm`
+          }
         />
       </div>
     </div>

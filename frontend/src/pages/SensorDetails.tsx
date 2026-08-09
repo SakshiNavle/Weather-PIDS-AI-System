@@ -28,7 +28,7 @@ export default function SensorDetails() {
     setError(null);
     try {
       const [sensorRes, predRes] = await Promise.all([
-        sensorApi.get(id),
+        sensorApi.get(Number(id)),
         predictionApi.bySensor(id).catch(() => []),
       ]);
       setSensor(sensorRes);

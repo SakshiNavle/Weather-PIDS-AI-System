@@ -1,31 +1,87 @@
 import { Sparkles } from "lucide-react";
+
 import type { Recommendation } from "../../types/recommendation";
+
 import { RiskBadge } from "../common/RiskBadge";
 import { SensitivityBadge } from "../common/SensitivityBadge";
 import { formatRelativeTime } from "../../utils/format";
+
 import "./recommendation-card.css";
 
-export function RecommendationCard({ rec }: { rec: Recommendation }) {
+export function RecommendationCard({
+  rec,
+}: {
+  rec: Recommendation;
+}) {
   return (
-    <div className="rec-card">
-      <div className="rec-card__icon">
-        <Sparkles size={15} />
-      </div>
-      <div className="rec-card__body">
-        <div className="rec-card__top">
-          <span className="rec-card__title">
-            {rec.sensor_name ? `${rec.sensor_name} Calibration` : `Sensor #${rec.sensor_id} Calibration`}
-          </span>
-          <RiskBadge risk={rec.risk} size="sm" />
+    <div className="recommendation-card">
+
+      <div className="recommendation-card__header">
+
+        <div className="recommendation-card__title">
+          <Sparkles size={18} />
+
+          <div>
+            <h3>
+              {rec.title}
+            </h3>
+
+            <span>
+              Sensor #{rec.sensor_id}
+            </span>
+          </div>
         </div>
-        <p className="rec-card__message">{rec.message}</p>
-        <div className="rec-card__footer">
-          <span className="rec-card__action">
-            Recommended: <SensitivityBadge value={rec.recommended_sensitivity} />
-          </span>
-          <span className="rec-card__time">{formatRelativeTime(rec.created_at)}</span>
-        </div>
+
+        <RiskBadge
+          risk={rec.risk_level}
+          size="sm"
+        />
+
       </div>
+
+      <div className="recommendation-card__body">
+
+        <p>
+          {rec.description}
+        </p>
+
+        {rec.action && (
+          <div className="recommendation-card__action">
+            <strong>Recommended Action:</strong>
+
+            <span>
+              {rec.action}
+            </span>
+          </div>
+        )}
+
+        {rec.recommended_sensitivity && (
+          <div className="recommendation-card__sensitivity">
+
+            <span>
+              Recommended Sensitivity:
+            </span>
+
+            <SensitivityBadge
+              value={
+                rec.recommended_sensitivity
+              }
+            />
+
+          </div>
+        )}
+
+      </div>
+
+      <div className="recommendation-card__footer">
+
+        <span>
+          Created{" "}
+          {formatRelativeTime(rec.created_at)}
+        </span>
+
+      </div>
+
     </div>
   );
 }

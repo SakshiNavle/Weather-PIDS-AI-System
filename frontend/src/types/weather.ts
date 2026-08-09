@@ -1,13 +1,7 @@
-export type RiskLevel =
-  | "LOW"
-  | "MEDIUM"
-  | "HIGH"
-  | "SEVERE"
-  | string;
+export type RiskLevel = "LOW" | "MEDIUM" | "HIGH" | "SEVERE" | string;
 
 export interface Weather {
   id: number;
-
   site_name: string;
 
   temperature: number;
@@ -19,15 +13,19 @@ export interface Weather {
   weather_description: string;
 
   storm: boolean;
-
   weather_risk: RiskLevel;
 
-  /*
-   * Some backend responses use timestamp,
-   * while database records may expose recorded_at.
-   */
   timestamp?: string | null;
   recorded_at?: string | null;
+}
+
+export interface WeatherCurrentResponse {
+  location: string;
+  weather: Weather;
+}
+
+export interface WeatherHistoryResponse {
+  records: Weather[];
 }
 
 export type WeatherHistory = Weather[];

@@ -265,7 +265,7 @@ export default function Sensors() {
                           fontWeight: 600,
                         }}
                       >
-                        {sensor.sensor_name}
+                        {sensor.name}
                       </div>
 
                       <div
@@ -315,7 +315,7 @@ export default function Sensors() {
 
                       <SensitivityBadge
                         value={
-                          sensor.current_sensitivity ??
+                         sensor.sensitivity??
                           "MEDIUM"
                         }
                       />
@@ -351,7 +351,7 @@ export default function Sensors() {
                         <button
                           className="icon-btn icon-btn--danger"
                           aria-label={
-                            `Delete ${sensor.sensor_name}`
+                            `Delete ${sensor.name}`
                           }
                           onClick={() =>
                             setPendingDelete(
@@ -433,7 +433,7 @@ export default function Sensors() {
           title="Delete sensor"
 
           message={
-            `Remove ${pendingDelete.sensor_name}? ` +
+            `Remove ${pendingDelete.name}? ` +
             "This cannot be undone."
           }
 
