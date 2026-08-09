@@ -1,16 +1,9 @@
 from datetime import datetime
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-)
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AlertBase(BaseModel):
-
-    sensor_id: int | None = None
-
     site_name: str = Field(
         ...,
         max_length=100
@@ -34,7 +27,6 @@ class AlertCreate(AlertBase):
 
 
 class AlertUpdate(BaseModel):
-
     risk_level: str | None = None
 
     message: str | None = None
@@ -43,12 +35,9 @@ class AlertUpdate(BaseModel):
 
 
 class AlertResponse(AlertBase):
-
     id: int
 
     created_at: datetime
-
-    resolved_at: datetime | None = None
 
     model_config = ConfigDict(
         from_attributes=True

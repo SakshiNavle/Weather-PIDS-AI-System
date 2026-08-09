@@ -4,6 +4,7 @@ from app.core.logger import setup_logger
 
 from app.models.weather import WeatherData
 from app.models.alert import Alert
+from app.models.recommendation import Recommendation
 
 from app.repositories.weather_repository import WeatherRepository
 
@@ -18,34 +19,30 @@ logger = setup_logger(__name__)
 class WeatherService:
     """
     Business logic for live weather operations.
+
+    Flow:
+        OpenWeather
+             ↓
+        WeatherData
+             ↓
+        Risk calculation
+             ↓
+        HIGH/SEVERE → Alert
+             ↓
+        HIGH/SEVERE → Recommendation
     """
 
     def __init__(self, db: Session):
 
         self.db = db
-
         self.repository = WeatherRepository(db)
-
         self.client = OpenWeatherClient()
 
     # =========================================================
     # RAINFALL
     # =========================================================
 
-    def _extract_rainfall(
-        self,
-        weather: dict
-    ) -> float:
-        """
-        Extract rainfall from OpenWeather response.
-
-        OpenWeather normally provides:
-
-            rain -> 1h
-
-        However, the rain object may be absent.
-        Therefore we safely handle all cases.
-        """
+    def _extract_rainfall(self, weather: dict) -> float:
 
         rain_data = weather.get("rain") or {}
 
@@ -73,14 +70,6 @@ class WeatherService:
         self,
         weather: dict
     ) -> tuple[str, str]:
-        """
-        Extract weather condition and description.
-
-        Example:
-
-        main        = Rain
-        description = light rain
-        """
 
         weather_list = weather.get("weather") or []
 
@@ -106,24 +95,16 @@ class WeatherService:
             or ""
         )
 
-        return (
-            condition,
-            description
-        )
+        return condition, description
 
     # =========================================================
-    # STORM DETECTION
+    # STORM
     # =========================================================
 
-    def _is_storm(
-        self,
-        weather: dict
-    ) -> bool:
+    def _is_storm(self, weather: dict) -> bool:
 
         condition, _ = (
-            self._extract_weather_condition(
-                weather
-            )
+            self._extract_weather_condition(weather)
         )
 
         return condition.upper() in {
@@ -140,36 +121,27 @@ class WeatherService:
         weather: dict
     ) -> str:
 
-        rainfall = self._extract_rainfall(
-            weather
-        )
+        rainfall = self._extract_rainfall(weather)
 
         wind_speed = float(
-            (
-                weather.get("wind") or {}
-            ).get(
+            (weather.get("wind") or {}).get(
                 "speed",
                 0
             )
         )
 
         humidity = float(
-            (
-                weather.get("main") or {}
-            ).get(
+            (weather.get("main") or {}).get(
                 "humidity",
                 0
             )
         )
 
         condition, description = (
-            self._extract_weather_condition(
-                weather
-            )
+            self._extract_weather_condition(weather)
         )
 
         condition = condition.upper()
-
         description = description.lower()
 
         # =====================================================
@@ -180,7 +152,6 @@ class WeatherService:
             "THUNDERSTORM",
             "TORNADO"
         }:
-
             return "SEVERE"
 
         # =====================================================
@@ -188,19 +159,15 @@ class WeatherService:
         # =====================================================
 
         if rainfall >= 20:
-
             return "HIGH"
 
         if wind_speed >= 15:
-
             return "HIGH"
 
-        # Heavy rain indicated by weather description
         if (
             "heavy rain" in description
             or "heavy intensity rain" in description
         ):
-
             return "HIGH"
 
         # =====================================================
@@ -208,26 +175,18 @@ class WeatherService:
         # =====================================================
 
         if rainfall >= 5:
-
             return "MEDIUM"
 
         if wind_speed >= 10:
-
             return "MEDIUM"
 
         if humidity >= 90:
-
             return "MEDIUM"
-
-        # Rain/drizzle should not automatically
-        # become LOW simply because rainfall amount
-        # is unavailable.
 
         if condition in {
             "RAIN",
             "DRIZZLE"
         }:
-
             return "MEDIUM"
 
         # =====================================================
@@ -246,55 +205,33 @@ class WeatherService:
         weather: dict
     ) -> WeatherData:
 
-        main_data = (
-            weather.get("main") or {}
-        )
+        main_data = weather.get("main") or {}
+        wind_data = weather.get("wind") or {}
 
-        wind_data = (
-            weather.get("wind") or {}
-        )
-
-        rainfall = self._extract_rainfall(
-            weather
-        )
+        rainfall = self._extract_rainfall(weather)
 
         condition, description = (
-            self._extract_weather_condition(
-                weather
-            )
+            self._extract_weather_condition(weather)
         )
 
-        risk_level = self._get_weather_risk(
-            weather
-        )
+        risk_level = self._get_weather_risk(weather)
 
-        storm = self._is_storm(
-            weather
-        )
+        storm = self._is_storm(weather)
 
         return WeatherData(
 
             site_name=city,
 
             temperature=float(
-                main_data.get(
-                    "temp",
-                    0
-                )
+                main_data.get("temp", 0)
             ),
 
             humidity=float(
-                main_data.get(
-                    "humidity",
-                    0
-                )
+                main_data.get("humidity", 0)
             ),
 
             wind_speed=float(
-                wind_data.get(
-                    "speed",
-                    0
-                )
+                wind_data.get("speed", 0)
             ),
 
             rainfall=rainfall,
@@ -309,7 +246,7 @@ class WeatherService:
         )
 
     # =========================================================
-    # WEATHER ALERT
+    # CREATE ALERT
     # =========================================================
 
     def _create_weather_alert(
@@ -317,25 +254,58 @@ class WeatherService:
         weather_data: WeatherData
     ):
 
-        if weather_data.weather_risk not in {
+        risk = weather_data.weather_risk
+
+        if risk not in {
             "HIGH",
             "SEVERE"
         }:
-
             return
+
+        # Prevent duplicate active alerts for same
+        # site and risk level.
+
+        existing = (
+            self.db.query(Alert)
+            .filter(
+                Alert.site_name
+                == weather_data.site_name,
+
+                Alert.risk_level
+                == risk,
+
+                Alert.is_active
+                == True
+            )
+            .first()
+        )
+
+        if existing:
+            return
+
+        message = (
+            f"{risk} weather detected at "
+            f"{weather_data.site_name}. "
+            f"Sensor calibration recommended. "
+            f"Condition: "
+            f"{weather_data.weather_condition}, "
+            f"temperature: "
+            f"{weather_data.temperature:.1f}°C, "
+            f"humidity: "
+            f"{weather_data.humidity:.0f}%, "
+            f"wind: "
+            f"{weather_data.wind_speed:.1f} m/s, "
+            f"rainfall: "
+            f"{weather_data.rainfall:.2f} mm."
+        )
 
         alert = Alert(
 
             site_name=weather_data.site_name,
 
-            risk_level=weather_data.weather_risk,
+            risk_level=risk,
 
-            message=(
-                f"{weather_data.weather_risk} weather "
-                f"detected at "
-                f"{weather_data.site_name}. "
-                f"Sensor calibration recommended."
-            ),
+            message=message,
 
             is_active=True
         )
@@ -343,7 +313,152 @@ class WeatherService:
         self.db.add(alert)
 
     # =========================================================
-    # FETCH + STORE
+    # CREATE RECOMMENDATION
+    # =========================================================
+
+    def _create_weather_recommendation(
+        self,
+        weather_data: WeatherData
+    ):
+
+        risk = weather_data.weather_risk
+
+        # Recommendations are meaningful for
+        # MEDIUM, HIGH and SEVERE conditions.
+
+        if risk not in {
+            "MEDIUM",
+            "HIGH",
+            "SEVERE"
+        }:
+            return
+
+        # -----------------------------------------------------
+        # Find an available sensor.
+        # -----------------------------------------------------
+
+        try:
+
+            from app.models.sensor import Sensor
+
+            sensor = (
+                self.db.query(Sensor)
+                .filter(
+                    Sensor.location
+                    == weather_data.site_name
+                )
+                .first()
+            )
+
+            # If no sensor exists for the city,
+            # we cannot create a sensor-specific recommendation.
+
+            if sensor is None:
+                logger.warning(
+                    "No sensor found for location %s",
+                    weather_data.site_name
+                )
+                return
+
+            # -------------------------------------------------
+            # Decide recommended sensitivity.
+            # -------------------------------------------------
+
+            if risk == "SEVERE":
+
+                recommended_sensitivity = "HIGH"
+
+                action = (
+                    "Increase sensor sensitivity to HIGH "
+                    "and monitor environmental conditions "
+                    "continuously."
+                )
+
+            elif risk == "HIGH":
+
+                recommended_sensitivity = "HIGH"
+
+                action = (
+                    "Increase sensor sensitivity to HIGH "
+                    "to improve detection during elevated "
+                    "weather risk."
+                )
+
+            else:
+
+                recommended_sensitivity = "MEDIUM"
+
+                action = (
+                    "Set sensor sensitivity to MEDIUM "
+                    "and continue monitoring weather conditions."
+                )
+
+            # -------------------------------------------------
+            # Prevent excessive duplicate recommendations.
+            # -------------------------------------------------
+
+            existing = (
+                self.db.query(Recommendation)
+                .filter(
+                    Recommendation.sensor_id
+                    == sensor.id,
+
+                    Recommendation.risk_level
+                    == risk
+                )
+                .first()
+            )
+
+            if existing:
+                return
+
+            description = (
+                f"Weather conditions at "
+                f"{weather_data.site_name} indicate "
+                f"{risk} environmental risk. "
+                f"Temperature="
+                f"{weather_data.temperature:.2f}°C, "
+                f"humidity="
+                f"{weather_data.humidity:.0f}%, "
+                f"wind speed="
+                f"{weather_data.wind_speed:.2f} m/s, "
+                f"rainfall="
+                f"{weather_data.rainfall:.2f} mm."
+            )
+
+            recommendation = Recommendation(
+
+                sensor_id=sensor.id,
+
+                risk_level=risk,
+
+                title=(
+                    f"{risk} Weather Calibration Recommendation"
+                ),
+
+                description=description,
+
+                action=action
+            )
+
+            self.db.add(recommendation)
+
+            logger.info(
+                "Recommendation created for sensor %s",
+                sensor.id
+            )
+
+        except Exception:
+
+            logger.exception(
+                "Failed to create weather recommendation"
+            )
+
+            # Do not destroy the weather transaction
+            # if recommendation generation fails.
+
+    # =========================================================
+    # FETCH + STORE WEATHER
     # =========================================================
 
     def fetch_and_store_weather(
@@ -354,17 +469,15 @@ class WeatherService:
         try:
 
             # -------------------------------------------------
-            # Fetch live weather
+            # Fetch live OpenWeather data
             # -------------------------------------------------
 
             weather = (
-                self.client.get_current_weather(
-                    city
-                )
+                self.client.get_current_weather(city)
             )
 
             # -------------------------------------------------
-            # Build database object
+            # Build WeatherData
             # -------------------------------------------------
 
             weather_data = (
@@ -374,82 +487,39 @@ class WeatherService:
                 )
             )
 
-            # =================================================
-            # DEBUG
-            # =================================================
-
-            print("\n")
-            print("=" * 70)
-
-            print("LIVE OPENWEATHER DATA")
-
-            print("=" * 70)
-
-            print(
-                f"City             : {city}"
+            logger.info(
+                "Weather fetched: city=%s risk=%s",
+                city,
+                weather_data.weather_risk
             )
 
-            print(
-                f"Temperature      : "
-                f"{weather_data.temperature} °C"
-            )
-
-            print(
-                f"Humidity         : "
-                f"{weather_data.humidity} %"
-            )
-
-            print(
-                f"Wind Speed       : "
-                f"{weather_data.wind_speed} m/s"
-            )
-
-            print(
-                f"Rainfall (1h)    : "
-                f"{weather_data.rainfall} mm"
-            )
-
-            print(
-                f"Condition        : "
-                f"{weather_data.weather_condition}"
-            )
-
-            print(
-                f"Description      : "
-                f"{weather_data.weather_description}"
-            )
-
-            print(
-                f"Storm            : "
-                f"{weather_data.storm}"
-            )
-
-            print(
-                f"Risk             : "
-                f"{weather_data.weather_risk}"
-            )
-
-            print("=" * 70)
-
-            # =================================================
-            # SAVE
-            # =================================================
+            # -------------------------------------------------
+            # Save weather
+            # -------------------------------------------------
 
             self.repository.save(
                 weather_data
             )
 
-            # =================================================
-            # ALERT
-            # =================================================
+            # -------------------------------------------------
+            # Alert
+            # -------------------------------------------------
 
             self._create_weather_alert(
                 weather_data
             )
 
-            # =================================================
-            # COMMIT
-            # =================================================
+            # -------------------------------------------------
+            # Recommendation
+            # -------------------------------------------------
+
+            self._create_weather_recommendation(
+                weather_data
+            )
+
+            # -------------------------------------------------
+            # Commit everything
+            # -------------------------------------------------
 
             self.db.commit()
 
@@ -492,7 +562,6 @@ class WeatherService:
         )
 
         if weather is None:
-
             return None
 
         return WeatherResponse.model_validate(
@@ -515,8 +584,6 @@ class WeatherService:
         )
 
         return [
-            WeatherResponse.model_validate(
-                record
-            )
+            WeatherResponse.model_validate(record)
             for record in records
         ]
